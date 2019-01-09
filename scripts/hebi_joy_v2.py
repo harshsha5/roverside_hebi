@@ -101,11 +101,6 @@ def auto_pointing():
             #theta[0],theta_actual[0],180 * theta[0] / np.pi,theta[1],theta_actual[1], 180 * theta[1] / np.pi, x, y, z))
 	
        	print('theta1 = %.4f, theta2 = %.4f; stepo= %.4f;' % (theta[0],theta[1],stepo))
-
-	if(stepo==-1.40 or stepo==1):
-	  exit()
-          break
-
         rate.sleep()
 
     #rospy.Subscriber("ak2/joy", Joy, callback)
