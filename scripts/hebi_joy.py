@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-auto_pointing_kmc.py
+hebi_rov.py
 Automatically pointing the claw manipulator towards the companion rover ring,
 using kinematic control approach.
 """
@@ -22,11 +22,13 @@ import tf
 import hebi
 import time
 import numpy as np
+from sensor_msgs.msg import Joy
+from std_msgs.msg import String
 
 VERT_MOTOR_OFFSET = .09  # cm
 HORZ_MOTOR_OFFSET = .07  # cm
 CLAW_ARM_LENGTH = .31  # cm
-
+#stepo=0
 
 def auto_pointing():
     # In ROS, nodes are uniquely named. If two nodes with the same
@@ -35,7 +37,7 @@ def auto_pointing():
     # name for our 'auto_pointing' node so that multiple nodes can run
     # simultaneously.
     rospy.init_node('auto_pointing', anonymous=True)
-
+    
     hebi_modules = [('arm', 'joint_0'), ('arm', 'joint_1')]
 
     theta_bounds = [[-.7, 1.4], [-0.8, 0.8]]
@@ -62,44 +64,58 @@ def auto_pointing():
 
     group_command = hebi.GroupCommand(hebi_group.size)
 
+    #PUBLISH ON TOPIC
+    pub = rospy.Publisher('motor_para', String, queue_size=10)
+    rate = rospy.Rate(30) # 30hz
+
     # create TF listener
     tf_listener = tf.TransformListener()
 
     # initialize HEBI actuator position control parameters
     # update_alpha = 0.5
     theta = np.array([0.0, 0.0])
-
+    stepo = 0
     rate = rospy.Rate(20)
+    #rospy.Subscriber("joy", Joy, callback)
     while not rospy.is_shutdown():
-        # observe the current ring location
-        try:
-            (T_ak1_ring, R_ak1_ring) = tf_listener.lookupTransform(
-                '/map', '/goal', rospy.Time(0))
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
 
-        (x, y, z) = [T_ak1_ring[0], T_ak1_ring[1], T_ak1_ring[2]]
-
-        d3 = z - VERT_MOTOR_OFFSET
-        # rospy.logwarn("d3: " + str(d3))
-        # rospy.logwarn("theta1: " + str(np.arctan2(d3, CLAW_ARM_LENGTH)))
-
-        theta[1] = np.arctan2(d3, CLAW_ARM_LENGTH)
-        phi = np.arctan2(HORZ_MOTOR_OFFSET, CLAW_ARM_LENGTH * np.cos(theta[1]))
-        theta[0] = np.arctan2(y, x) + phi
-
-        for i_dim in range(len(theta)):
-            theta[i_dim] = max(theta_bounds[i_dim][0], min(theta_bounds[i_dim][1], theta[i_dim]))
+    	#stepo+=-0.01	#positive means anti-clockwise rotation
+	msg = rospy.wait_for_message("ak2/joy", Joy)
+	stepo=stepo+.02*msg.axes[6]
+    	theta=np.array([stepo, 0.0])
+	motor_angle=str(theta[0])+' '+str(theta[1])
+	pub.publish(motor_angle)
 
     # send command to HEBI control group
         group_command.position = theta
         hebi_group.send_command(group_command)
-        print('theta1 = %.4f, theta2 = %.4f, x_c = (%.2f, %.2f, %.2f)' % (
-            180 * theta[0] / np.pi, 180 * theta[1] / np.pi, x, y, z))
+	time.sleep(.2)
+	
+        #print('theta1 = %.4f; %.4f; %.4f, theta2 = %.4f; %.4f; %.4f, x_c = (%.2f, %.2f, %.2f)' % (
+            #theta[0],theta_actual[0],180 * theta[0] / np.pi,theta[1],theta_actual[1], 180 * theta[1] / np.pi, x, y, z))
+	
+       	print('theta1 = %.4f, theta2 = %.4f; stepo= %.4f;' % (theta[0],theta[1],stepo))
+
+	if(stepo==-1.40 or stepo==1):
+	  exit()
+          break
 
         rate.sleep()
 
+    #rospy.Subscriber("ak2/joy", Joy, callback)
+
+
     # rospy.spin() # use spin only in pure event handling programming model
+
+'''def callback(data):
+    print(data.axes[6])
+    stepo += .1*data.axes[6]
+    theta=np.array([stepo, 0.0])
+    # send command to HEBI control group
+    group_command.position = theta
+    hebi_group.send_command(group_command)
+    time.sleep(.2)
+    print('theta1 = %.4f, theta2 = %.4f; stepo= %.4f;' % (theta[0],theta[1],stepo))'''
 
 
 if __name__ == '__main__':

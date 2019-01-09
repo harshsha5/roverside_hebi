@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-auto_pointing_kmc.py
+hebi_rov.py
 Automatically pointing the claw manipulator towards the companion rover ring,
 using kinematic control approach.
 """
@@ -68,15 +68,19 @@ def auto_pointing():
     # initialize HEBI actuator position control parameters
     # update_alpha = 0.5
     theta = np.array([0.0, 0.0])
-
+    stepo = 0
     rate = rospy.Rate(20)
     while not rospy.is_shutdown():
         # observe the current ring location
-        try:
-            (T_ak1_ring, R_ak1_ring) = tf_listener.lookupTransform(
-                '/map', '/goal', rospy.Time(0))
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
+        #try:
+            #(T_ak1_ring, R_ak1_ring) = tf_listener.lookupTransform(
+            #    '/ak2_claw', '/ak1_ring', rospy.Time(0))
+        #except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            #continue
+        '''
+	stepo+=0.01    
+        T_ak1_ring=[stepo,stepo,1]
+	#time.sleep(0.01)
 
         (x, y, z) = [T_ak1_ring[0], T_ak1_ring[1], T_ak1_ring[2]]
 
@@ -88,14 +92,28 @@ def auto_pointing():
         phi = np.arctan2(HORZ_MOTOR_OFFSET, CLAW_ARM_LENGTH * np.cos(theta[1]))
         theta[0] = np.arctan2(y, x) + phi
 
+	theta_actual = theta
+
         for i_dim in range(len(theta)):
-            theta[i_dim] = max(theta_bounds[i_dim][0], min(theta_bounds[i_dim][1], theta[i_dim]))
+            theta[i_dim] = max(theta_bounds[i_dim][0], min(theta_bounds[i_dim][1], theta[i_dim]))'''
+	stepo+=-0.01	#positive means anti-clockwise rotation
+	theta=np.array([stepo, 0.0])
+	theta_actual = theta
+            
 
     # send command to HEBI control group
         group_command.position = theta
         hebi_group.send_command(group_command)
-        print('theta1 = %.4f, theta2 = %.4f, x_c = (%.2f, %.2f, %.2f)' % (
-            180 * theta[0] / np.pi, 180 * theta[1] / np.pi, x, y, z))
+	time.sleep(.2)
+	
+        #print('theta1 = %.4f; %.4f; %.4f, theta2 = %.4f; %.4f; %.4f, x_c = (%.2f, %.2f, %.2f)' % (
+            #theta[0],theta_actual[0],180 * theta[0] / np.pi,theta[1],theta_actual[1], 180 * theta[1] / np.pi, x, y, z))
+	
+       	print('theta1 = %.4f, theta2 = %.4f; stepo= %.4f;' % (theta[0],theta[1],stepo))
+
+	if(stepo==-1.40 or stepo==1):
+	  exit()
+          break
 
         rate.sleep()
 
