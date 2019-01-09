@@ -60,5 +60,6 @@ Please refer to the below setup and installation process:
 Below are the list of authors and copyright information.
 
 * __Dicong Qiu__ (dq@cs.cmu.edu, http://www.davidqiu.com/)
+* __Harsh Sharma__ (harshsha@andrew.cmu.edu)
 
-Copyright (C) 2018, Moon Wreckers. All rights reserved.
+Copyright (C) 2018, All rights reserved.
