@@ -12,7 +12,7 @@ __copyright__ = "Copyright (C) 2019, the H#SH Robotics. All rights reserved."
 
 import rospy
 import tf
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped,Twist
 import hebi
 import time
 import numpy as np
@@ -22,23 +22,16 @@ from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 # OpenCV2 for saving an image
 import cv2
-import csv
 
 
 
 def open_csv(filio):
     with open(filio,'w') as file_1:
-	pass
-    
+    	pass
     file_1.close()
 
-def write_csv(data_list,wr):
-    '''for entries in data_list:
-            wr.write(entries)
-            wr.write(",")
-    wr.write(';')'''
-    wr.writerow(data_list)
-    return
+def write_csv(data_list,file_1):
+    file_1.write(data_list)
 
 def get_msg(topic_name,data_type):
     msg=rospy.wait_for_message(topic_name, data_type)
@@ -48,14 +41,13 @@ def get_msg(topic_name,data_type,name_folder,count):
     msg=rospy.wait_for_message(topic_name, data_type)
     try:
         # Convert your ROS Image message to OpenCV2
-	bridge=CvBridge()
         cv2_img = bridge.imgmsg_to_cv2(msg, "bgr8")
     except CvBridgeError, e:
         print(e)
     else:
         # Save your OpenCV2 image as a jpeg 
-        time = str(msg.header.stamp)
-	image_name='img_'+str(count)+'.jpeg'
+        time = msg.header.stamp
+	image_name=str(count)+'-'+str(time)+'.jpeg'
         cv2.imwrite(name_folder+image_name, cv2_img)
         #rospy.sleep(1)
 
@@ -67,15 +59,14 @@ def sensor_capture():
     open_csv('sensor_data.csv')
     count=0
     with open('sensor_data.csv','a') as file_1:
-	wr = csv.writer(file_1)
     
 
     	while not rospy.is_shutdown():
-		msg = rospy.wait_for_message("ak1/joy", Joy)
-		print("Sensor Capture file running..... ", int(msg.axes[7]))
-		if(int(msg.axes[7])==1):
+		msg = rospy.wait_for_message("/cmd_vel", Twist)
+		print("Sensor Capture file running..... ", float(msg.linear.x))
+		if(float(msg.linear.x)==0.5):
+			print("hi")
 			count+=1
-			print("Button Snapped")
 
 	    		'''msg_hebi=get_msg('motor_para', PoseStamped)
 	    		msg_real_sense=get_msg('/camera/color/image_raw', Image, '/home/ashish/data/real-sense/')
@@ -85,17 +76,10 @@ def sensor_capture():
 			msg_360_fish_2=get_msg('/usb_cam2/image_raw', Image, '/home/ashish/data/360-fish-2/')
 			msg_down_fish=get_msg('/camera/image_color', Image, '/home/ashish/data/down-fish/')
 			data_list=[count,msg_hebi.header.stamp,msg_header.pose.orientation.x,msg_header.pose.orientation.y,msg_real_sense[0],msg_real_sense[1],msg_decawave.header.stamp,msg_decawave.range,msg_360_fish_0[0],msg_360_fish_0[1],msg_360_fish_1[0],msg_360_fish_1[1],msg_360_fish_2[0],msg_360_fish_2[1],msg_down_fish[0],msg_down_fish[1]]'''
-			
 
 			msg_real_sense=get_msg('/camera/color/image_raw', Image, '/home/ashish/data/real-sense/',count)
-			print("Real-sense data obtained")
-			msg_down_fish=get_msg('/pg_camera/image_color', Image, '/home/ashish/data/down-fish/',count)
-			print("Downward fish-eye data obtained")
-			#msg_360_fish_2=get_msg('/usb_cam2/image_raw', Image, '/home/ashish/data/360-fish-2/',count)
-			#data_list=[str(msg_real_sense[0]),str(msg_real_sense[1]),msg_360_fish_2[0],str(msg_360_fish_2[1])]
-			#data_list=[msg_real_sense[0],msg_real_sense[1],msg_360_fish_2[0],msg_360_fish_2[1]]
-			data_list=[msg_real_sense[0],msg_real_sense[1],msg_down_fish[0],msg_down_fish[1]]
-			write_csv(data_list,wr)
+			write_csv(data_list,file_1)
+			print("bye")
 	    		continue
     
     	rospy.spin()
