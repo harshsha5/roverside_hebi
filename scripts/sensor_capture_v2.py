@@ -68,13 +68,15 @@ def make_folders(my_argv):
 		print("Real Sense detected")
 		path = "/home/ashish/data/real-sense{0}".format(n)
 		create_directory('RS',path)
-		RS_FOLDER=path
+		global RS_FOLDER
+		RS_FOLDER=path+'/'
 	if('PG' in my_argv):
 		print("Point Grey detected")
 		path = "/home/ashish/data/PG{0}".format(n)
 		print(path)
 		create_directory('PG',path)
-		PG_FOLDER=path
+		global PG_FOLDER
+		PG_FOLDER=path+'/'
 
 def create_directory(stro,path):
 		try:  
@@ -86,16 +88,17 @@ def create_directory(stro,path):
 	
     
 def sensor_capture(my_argv):
+    global DATA_FILE
     rospy.init_node('sensor_capture', anonymous=True)
-    open_csv('sensor_data.csv')
+    open_csv(DATA_FILE)
     count=0
     make_folders(my_argv)
-    with open('sensor_data.csv','a') as file_1:
+    with open(DATA_FILE,'a') as file_1:
 	wr = csv.writer(file_1)
     
 
     	while not rospy.is_shutdown():
-		msg = rospy.wait_for_message("ak1/joy", Joy)
+		msg = rospy.wait_for_message("ak2/joy", Joy)
 		print("Sensor Capture file running..... ", int(msg.axes[7]))
 		if(int(msg.axes[7])==1):
 			data_list=[]
@@ -109,10 +112,10 @@ def sensor_capture(my_argv):
 				print("Decawave captured")
 			
 			if('HEBI' in my_argv):
-				msg_hebi=get_msgtwoargs('motor_para', PoseStamped)
+				msg_hebi=get_msg_twoargs('motor_para', PoseStamped)
 				data_list.append(msg_hebi.header.stamp)
-				data_list.append(msg_header.pose.orientation.x)
-				data_list.append(msg_header.pose.orientation.y)
+				data_list.append(msg_hebi.pose.orientation.x)
+				data_list.append(msg_hebi.pose.orientation.y)
 
 			if('RS' in my_argv):
 				msg_real_sense=get_msg('/camera/color/image_raw', Image, RS_FOLDER,count)
@@ -134,7 +137,8 @@ if __name__ == '__main__':
     PG_FOLDER=''
     RS_FOLDER=''
     my_argv = rospy.myargv(argv=sys.argv)
-    print(my_argv)
+    DATA_FILE = 'sensor_data_'+my_argv[1]+'.csv'
+    #print(my_argv)
     try:
         sensor_capture(my_argv)
     except rospy.ROSInterruptException:
