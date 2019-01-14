@@ -67,7 +67,7 @@ def auto_pointing():
     # initialize HEBI actuator position control parameters
     # update_alpha = 0.5
     theta = np.array([0.0, 0.0])
-    stepo = 0.8
+    stepo = 0.85
     rate = rospy.Rate(20)
     #rospy.Subscriber("joy", Joy, callback)
     while not rospy.is_shutdown():
