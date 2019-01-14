@@ -116,16 +116,19 @@ def sensor_capture(my_argv):
 				data_list.append(msg_hebi.header.stamp)
 				data_list.append(msg_hebi.pose.orientation.x)
 				data_list.append(msg_hebi.pose.orientation.y)
+				print("HEBI captured")
 
 			if('RS' in my_argv):
 				msg_real_sense=get_msg('/camera/color/image_raw', Image, RS_FOLDER,count)
 				data_list.append(msg_real_sense[0])
 				data_list.append(msg_real_sense[1])
+				print("Real-sense captured")
 			
 			if('PG' in my_argv):
 				msg_down_fish=get_msg('/pg_camera/image_color', Image, PG_FOLDER,count)
 				data_list.append(msg_down_fish[0])
 				data_list.append(msg_down_fish[1])
+				print("Point Grey Captured")
 
 			write_csv(data_list,wr)
 	    		continue
